@@ -13,17 +13,17 @@ jobs:
             - name: Checkout code
               uses: actions/checkout@v4
             - name: Verify Python version
-              shell: pwsh
+              shell: powershell
               run: |
                 python --version
                 Get-Command python
             - name: Install dependencies
-              shell: pwsh
+              shell: powershell
               run: |
                 python -m pip install --upgrade pip
                 python -m pip install -r requirements.txt
             - name: Run tests
-              shell: pwsh
+              shell: powershell
               run: |
                 python -m pytest test_app.py -v
     build:
@@ -36,7 +36,7 @@ jobs:
               uses: actions/checkout@v4
             
             - name: Build Docker Image
-              shell: pwsh
+              shell: powershell
               run: docker build -t ci-cd-demo:latest .
     deploy:
         name: Deploy to localhost
@@ -46,7 +46,7 @@ jobs:
 
         steps:
             - name: Stop old container
-              shell: pwsh
+              shell: powershell
               run: |
                  $containerId = docker ps -aq --filter "name=^python-app$"
                  if ($containerId) {
@@ -54,11 +54,11 @@ jobs:
                    docker rm python-app
                  }
             - name: Start new container
-              shell: pwsh
+              shell: powershell
               run: |
                  docker run -d --name python-app -p 5001:5001 --restart unless-stopped ci-cd-demo:latest
             - name: check deployment
-              shell: pwsh
+              shell: powershell
               run: |
                 Start-Sleep -Seconds 10
                 $response = Invoke-WebRequest -Uri http://localhost:5001/health
@@ -67,5 +67,5 @@ jobs:
                 }
                 Write-Host "Deployment successful"
             - name: show running containers
-              shell: pwsh
+              shell: powershell
               run: docker ps --filter "name=python-app"
