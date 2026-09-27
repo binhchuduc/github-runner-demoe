@@ -12,11 +12,21 @@ jobs:
         steps:
             - name: Checkout code
               uses: actions/checkout@v4
+            - name: Locate Python
+              shell: cmd
+              run: |
+                where python >nul 2>&1 && echo Python already on PATH && exit /b 0
+                if exist "%LOCALAPPDATA%\Programs\Python\Python310\python.exe" echo %LOCALAPPDATA%\Programs\Python\Python310>>"%GITHUB_PATH%" && echo %LOCALAPPDATA%\Programs\Python\Python310\Scripts>>"%GITHUB_PATH%" && exit /b 0
+                if exist "%LOCALAPPDATA%\Programs\Python\Python314\python.exe" echo %LOCALAPPDATA%\Programs\Python\Python314>>"%GITHUB_PATH%" && echo %LOCALAPPDATA%\Programs\Python\Python314\Scripts>>"%GITHUB_PATH%" && exit /b 0
+                if exist "C:\Users\binh.chu\AppData\Local\Programs\Python\Python310\python.exe" echo C:\Users\binh.chu\AppData\Local\Programs\Python\Python310>>"%GITHUB_PATH%" && echo C:\Users\binh.chu\AppData\Local\Programs\Python\Python310\Scripts>>"%GITHUB_PATH%" && exit /b 0
+                if exist "C:\Program Files\Python310\python.exe" echo C:\Program Files\Python310>>"%GITHUB_PATH%" && echo C:\Program Files\Python310\Scripts>>"%GITHUB_PATH%" && exit /b 0
+                echo Python was not found on this runner. Install Python or restart the runner service after installing it.
+                exit /b 1
             - name: Verify Python version
               shell: cmd
               run: |
-                python --version
                 where python
+                python --version
             - name: Install dependencies
               shell: cmd
               run: |
