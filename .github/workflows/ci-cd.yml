@@ -1,0 +1,75 @@
+name: CI/CD demo
+on:
+    push:
+        branches: [ main, dev]
+    pull_request:
+        branches: [ main, dev]
+jobs:
+    test:
+        name: Run Tests
+        runs-on: [self-hosted, windows]
+    
+        steps:
+            - name: Checkout code
+              uses: actions/checkout@v4
+            - name: Set up Python
+              uses: actions/setup-python@v5
+              with:
+                python-version: '3.11'
+            - name: Verify Python version
+              shell: pwsh
+              run: |
+                python --version
+                Get-Command python
+            - name: Install dependencies
+              shell: pwsh
+              run: |
+                python -m pip install --upgrade pip
+                pip install -r requirements.txt
+            - name: Run tests
+              shell: pwsh
+              run: |
+                pytest test_app.py -v
+    build:
+        name: Build Docker Image
+        runs-on: [self-hosted, windows]
+        needs: test
+
+        steps:
+            - name: Checkout code
+              uses: actions/checkout@v4
+            
+            - name: Build Docker Image
+              shell: pwsh
+              run: docker build -t ci-cd-demo:latest .
+    deploy:
+        name: Deploy to localhost
+        runs-on: [self-hosted, windows]
+        needs: build
+        if: github.ref == 'refs/heads/main'
+
+        steps:
+            - name: Stop old container
+              shell: pwsh
+              run: |
+                 $containerId = docker ps -aq --filter "name=^python-app$"
+                 if ($containerId) {
+                   docker stop python-app
+                   docker rm python-app
+                 }
+            - name: Start new container
+              shell: pwsh
+              run: |
+                 docker run -d --name python-app -p 5001:5001 --restart unless-stopped ci-cd-demo:latest
+            - name: check deployment
+              shell: pwsh
+              run: |
+                Start-Sleep -Seconds 10
+                $response = Invoke-WebRequest -Uri http://localhost:5001/health
+                if ($response.StatusCode -ne 200) {
+                  throw "Deployment health check failed"
+                }
+                Write-Host "Deployment successful"
+            - name: show running containers
+              shell: pwsh
+              run: docker ps --filter "name=python-app"
